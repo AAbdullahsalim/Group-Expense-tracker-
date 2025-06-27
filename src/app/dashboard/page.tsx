@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase-client'
 import { Group } from '@/types/database'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import EditGroupModal from '@/components/EditGroupModal'
 
 export default function Dashboard() {
   const [groups, setGroups] = useState<Group[]>([])
@@ -12,6 +13,8 @@ export default function Dashboard() {
   const [creating, setCreating] = useState(false)
   const [groupName, setGroupName] = useState('')
   const [user, setUser] = useState<any>(null)
+  const [editingGroup, setEditingGroup] = useState<Group | null>(null)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const router = useRouter()
   const supabase = createClient()
 
@@ -64,6 +67,51 @@ export default function Dashboard() {
   const signOut = async () => {
     await supabase.auth.signOut()
     router.push('/')
+  }
+
+  const handleEditGroup = (group: Group) => {
+    setEditingGroup(group)
+    setIsEditModalOpen(true)
+  }
+
+  const handleSaveGroup = async (groupId: string, name: string) => {
+    const response = await fetch(`/api/groups/${groupId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ name }),
+    })
+
+    if (!response.ok) {
+      throw new Error('Failed to update group')
+    }
+
+    // Refresh groups list
+    getGroups()
+  }
+
+  const handleDeleteGroup = async (groupId: string) => {
+    if (!confirm('Are you sure you want to delete this group? All expenses in this group will also be deleted.')) {
+      return
+    }
+
+    const response = await fetch(`/api/groups/${groupId}`, {
+      method: 'DELETE',
+    })
+
+    if (!response.ok) {
+      console.error('Failed to delete group')
+      return
+    }
+
+    // Refresh groups list
+    getGroups()
+  }
+
+  const closeEditModal = () => {
+    setIsEditModalOpen(false)
+    setEditingGroup(null)
   }
 
   if (loading) {
@@ -132,23 +180,57 @@ export default function Dashboard() {
           ) : (
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               {groups.map((group) => (
-                <Link
+                <div
                   key={group.id}
-                  href={`/groups/${group.id}`}
-                  className="block p-6 bg-white rounded-lg shadow hover:shadow-md transition-shadow"
+                  className="bg-white rounded-lg shadow hover:shadow-md transition-shadow"
                 >
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                    {group.name}
-                  </h3>
-                  <p className="text-gray-500 text-sm">
-                    Created {new Date(group.created_at).toLocaleDateString()}
-                  </p>
-                </Link>
+                  <Link
+                    href={`/groups/${group.id}`}
+                    className="block p-6"
+                  >
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                      {group.name}
+                    </h3>
+                    <p className="text-gray-500 text-sm">
+                      Created {new Date(group.created_at).toLocaleDateString()}
+                    </p>
+                  </Link>
+                  
+                  {/* Action buttons */}
+                  <div className="px-6 pb-4 flex gap-2">
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault()
+                        handleEditGroup(group)
+                      }}
+                      className="text-indigo-600 hover:text-indigo-800 text-sm font-medium"
+                    >
+                      ✏️ Edit
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault()
+                        handleDeleteGroup(group.id)
+                      }}
+                      className="text-red-600 hover:text-red-800 text-sm font-medium"
+                    >
+                      🗑️ Delete
+                    </button>
+                  </div>
+                </div>
               ))}
             </div>
           )}
         </div>
       </div>
+
+      {/* Edit Group Modal */}
+      <EditGroupModal
+        group={editingGroup}
+        isOpen={isEditModalOpen}
+        onClose={closeEditModal}
+        onSave={handleSaveGroup}
+      />
     </div>
   )
 } 

@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase-client'
 import { Group, Expense } from '@/types/database'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import EditExpenseModal from '@/components/EditExpenseModal'
 
 interface Props {
   params: { groupId: string }
@@ -18,6 +19,8 @@ export default function GroupPage({ params }: Props) {
   const [description, setDescription] = useState('')
   const [amount, setAmount] = useState('')
   const [user, setUser] = useState<any>(null)
+  const [editingExpense, setEditingExpense] = useState<Expense | null>(null)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const router = useRouter()
   const supabase = createClient()
 
@@ -88,6 +91,51 @@ export default function GroupPage({ params }: Props) {
   const signOut = async () => {
     await supabase.auth.signOut()
     router.push('/')
+  }
+
+  const handleEditExpense = (expense: Expense) => {
+    setEditingExpense(expense)
+    setIsEditModalOpen(true)
+  }
+
+  const handleSaveExpense = async (expenseId: string, description: string, amount: number) => {
+    const response = await fetch(`/api/expense/${expenseId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ description, amount }),
+    })
+
+    if (!response.ok) {
+      throw new Error('Failed to update expense')
+    }
+
+    // Refresh expenses list
+    getExpenses()
+  }
+
+  const handleDeleteExpense = async (expenseId: string) => {
+    if (!confirm('Are you sure you want to delete this expense?')) {
+      return
+    }
+
+    const response = await fetch(`/api/expense/${expenseId}`, {
+      method: 'DELETE',
+    })
+
+    if (!response.ok) {
+      console.error('Failed to delete expense')
+      return
+    }
+
+    // Refresh expenses list
+    getExpenses()
+  }
+
+  const closeEditModal = () => {
+    setIsEditModalOpen(false)
+    setEditingExpense(null)
   }
 
   const totalAmount = expenses.reduce((sum, expense) => sum + expense.amount, 0)
@@ -218,8 +266,24 @@ export default function GroupPage({ params }: Props) {
                           Added on {new Date(expense.created_at).toLocaleDateString()}
                         </p>
                       </div>
-                      <div className="text-lg font-semibold text-gray-900">
-                        ${expense.amount.toFixed(2)}
+                      <div className="flex items-center gap-4">
+                        <div className="text-lg font-semibold text-gray-900">
+                          ${expense.amount.toFixed(2)}
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleEditExpense(expense)}
+                            className="text-indigo-600 hover:text-indigo-800 text-sm font-medium"
+                          >
+                            ✏️ Edit
+                          </button>
+                          <button
+                            onClick={() => handleDeleteExpense(expense.id)}
+                            className="text-red-600 hover:text-red-800 text-sm font-medium"
+                          >
+                            🗑️ Delete
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </li>
@@ -229,6 +293,14 @@ export default function GroupPage({ params }: Props) {
           )}
         </div>
       </div>
+
+      {/* Edit Expense Modal */}
+      <EditExpenseModal
+        expense={editingExpense}
+        isOpen={isEditModalOpen}
+        onClose={closeEditModal}
+        onSave={handleSaveExpense}
+      />
     </div>
   )
 } 
