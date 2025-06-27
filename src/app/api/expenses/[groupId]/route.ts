@@ -5,10 +5,10 @@ import { Database } from '@/types/database'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { groupId: string } }
+  { params }: { params: Promise<{ groupId: string }> }
 ) {
   try {
-    const { groupId } = params
+    const { groupId } = await params
 
     const cookieStore = cookies()
     const supabase = createRouteHandlerClient<Database>({ cookies: () => cookieStore })
@@ -65,10 +65,10 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { groupId: string } }
+  { params }: { params: Promise<{ groupId: string }> }
 ) {
   try {
-    const { groupId } = params
+    const { groupId } = await params
     const { description, amount } = await request.json()
 
     if (!description || !amount) {

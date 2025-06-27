@@ -8,7 +8,7 @@ import Link from 'next/link'
 import EditExpenseModal from '@/components/EditExpenseModal'
 
 interface Props {
-  params: { groupId: string }
+  params: Promise<{ groupId: string }>
 }
 
 export default function GroupPage({ params }: Props) {
@@ -21,14 +21,26 @@ export default function GroupPage({ params }: Props) {
   const [user, setUser] = useState<any>(null)
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [groupId, setGroupId] = useState<string>('')
   const router = useRouter()
   const supabase = createClient()
 
   useEffect(() => {
-    getUser()
-    getGroup()
-    getExpenses()
-  }, [params.groupId])
+    // Unwrap params Promise for Next.js 15 compatibility
+    const initializeParams = async () => {
+      const resolvedParams = await params
+      setGroupId(resolvedParams.groupId)
+    }
+    initializeParams()
+  }, [params])
+
+  useEffect(() => {
+    if (groupId) {
+      getUser()
+      getGroup()
+      getExpenses()
+    }
+  }, [groupId])
 
   const getUser = async () => {
     const { data: { user } } = await supabase.auth.getUser()
@@ -36,10 +48,12 @@ export default function GroupPage({ params }: Props) {
   }
 
   const getGroup = async () => {
+    if (!groupId) return
+    
     const { data, error } = await supabase
       .from('groups')
       .select('*')
-      .eq('id', params.groupId)
+      .eq('id', groupId)
       .single()
 
     if (error) {
@@ -51,7 +65,9 @@ export default function GroupPage({ params }: Props) {
   }
 
   const getExpenses = async () => {
-    const response = await fetch(`/api/expenses/${params.groupId}`)
+    if (!groupId) return
+    
+    const response = await fetch(`/api/expenses/${groupId}`)
     
     if (response.ok) {
       const data = await response.json()
@@ -64,10 +80,10 @@ export default function GroupPage({ params }: Props) {
 
   const addExpense = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!description.trim() || !amount) return
+    if (!description.trim() || !amount || !groupId) return
 
     setCreating(true)
-    const response = await fetch(`/api/expenses/${params.groupId}`, {
+    const response = await fetch(`/api/expenses/${groupId}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
