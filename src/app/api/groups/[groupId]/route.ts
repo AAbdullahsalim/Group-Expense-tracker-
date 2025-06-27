@@ -3,77 +3,21 @@ import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import { Database } from '@/types/database'
 
-export async function GET(
+/**
+ * PUT /api/groups/[groupId]
+ * Update a group's information (name, etc.)
+ */
+export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ groupId: string }> }
 ) {
   try {
     const { groupId } = await params
+    const { name } = await request.json()
 
-    const cookieStore = cookies()
-    const supabase = createRouteHandlerClient<Database>({ cookies: () => cookieStore })
-
-    // Get the user from the session
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    
-    if (authError || !user) {
+    if (!name) {
       return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
-
-    // Verify user owns the group
-    const { data: group, error: groupError } = await supabase
-      .from('groups')
-      .select('*')
-      .eq('id', groupId)
-      .eq('created_by', user.id)
-      .single()
-
-    if (groupError || !group) {
-      return NextResponse.json(
-        { error: 'Group not found or access denied' },
-        { status: 404 }
-      )
-    }
-
-    // Get expenses for the group
-    const { data: expenses, error } = await supabase
-      .from('expenses')
-      .select('*')
-      .eq('group_id', groupId)
-      .order('created_at', { ascending: false })
-
-    if (error) {
-      console.error('Supabase error:', error)
-      return NextResponse.json(
-        { error: 'Failed to fetch expenses' },
-        { status: 500 }
-      )
-    }
-
-    return NextResponse.json(expenses || [])
-  } catch (error) {
-    console.error('API error:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
-  }
-}
-
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ groupId: string }> }
-) {
-  try {
-    const { groupId } = await params
-    const { description, amount } = await request.json()
-
-    if (!description || !amount) {
-      return NextResponse.json(
-        { error: 'Description and amount are required' },
+        { error: 'Group name is required' },
         { status: 400 }
       )
     }
@@ -91,44 +35,80 @@ export async function POST(
       )
     }
 
-    // Verify user owns the group
-    const { data: group, error: groupError } = await supabase
+    // Update the group (RLS policies ensure user can only update their own groups)
+    const { data, error } = await supabase
       .from('groups')
-      .select('*')
+      .update({ name })
       .eq('id', groupId)
       .eq('created_by', user.id)
-      .single()
-
-    if (groupError || !group) {
-      return NextResponse.json(
-        { error: 'Group not found or access denied' },
-        { status: 404 }
-      )
-    }
-
-    // Create the expense
-    const { data, error } = await supabase
-      .from('expenses')
-      .insert([
-        {
-          description,
-          amount: parseFloat(amount),
-          group_id: groupId,
-          created_by: user.id,
-        },
-      ])
       .select()
       .single()
 
     if (error) {
       console.error('Supabase error:', error)
       return NextResponse.json(
-        { error: 'Failed to create expense' },
+        { error: 'Failed to update group' },
         { status: 500 }
       )
     }
 
+    if (!data) {
+      return NextResponse.json(
+        { error: 'Group not found or access denied' },
+        { status: 404 }
+      )
+    }
+
     return NextResponse.json(data)
+  } catch (error) {
+    console.error('API error:', error)
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}
+
+/**
+ * DELETE /api/groups/[groupId]
+ * Delete a group and all its expenses
+ */
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ groupId: string }> }
+) {
+  try {
+    const { groupId } = await params
+
+    const cookieStore = cookies()
+    const supabase = createRouteHandlerClient<Database>({ cookies: () => cookieStore })
+
+    // Get the user from the session
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    
+    if (authError || !user) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
+    // Delete the group (CASCADE will delete associated expenses)
+    const { error } = await supabase
+      .from('groups')
+      .delete()
+      .eq('id', groupId)
+      .eq('created_by', user.id)
+
+    if (error) {
+      console.error('Supabase error:', error)
+      return NextResponse.json(
+        { error: 'Failed to delete group' },
+        { status: 500 }
+      )
+    }
+
+    return NextResponse.json({ success: true })
   } catch (error) {
     console.error('API error:', error)
     return NextResponse.json(
