@@ -78,9 +78,9 @@ export default function AuthForm() {
         // Successful registration - show email confirmation message
         setError('Check your email for the confirmation link!')
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Display authentication errors to user
-      setError(error.message)
+      setError(error instanceof Error ? error.message : 'An unexpected error occurred')
     } finally {
       // Reset loading state regardless of success/failure
       setIsLoading(false)

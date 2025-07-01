@@ -48,8 +48,8 @@ export default function EditExpenseModal({ expense, isOpen, onClose, onSave }: E
     try {
       await onSave(expense.id, description.trim(), numAmount)
       onClose()
-    } catch (error: any) {
-      setError(error.message || 'Failed to update expense')
+    } catch (error: unknown) {
+      setError(error instanceof Error ? error.message : 'Failed to update expense')
     } finally {
       setIsLoading(false)
     }

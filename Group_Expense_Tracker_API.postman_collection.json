@@ -1,0 +1,229 @@
+{
+  "info": {
+    "name": "Group Expense Tracker API",
+    "description": "Complete API collection for the Group Expense Tracker Next.js application",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "groupId",
+      "value": "your-group-id-here",
+      "type": "string"
+    },
+    {
+      "key": "expenseId",
+      "value": "your-expense-id-here",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/health",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "health"]
+        },
+        "description": "Check if the API is running properly"
+      }
+    },
+    {
+      "name": "Groups Management",
+      "item": [
+        {
+          "name": "Get All Groups",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/groups",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "groups"]
+            },
+            "description": "Get all groups for the authenticated user"
+          }
+        },
+        {
+          "name": "Create New Group",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Weekend Trip\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/groups",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "groups"]
+            },
+            "description": "Create a new expense group"
+          }
+        },
+        {
+          "name": "Update Group",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Group Name\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/groups/{{groupId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "groups", "{{groupId}}"]
+            },
+            "description": "Update a group's information"
+          }
+        },
+        {
+          "name": "Delete Group",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/groups/{{groupId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "groups", "{{groupId}}"]
+            },
+            "description": "Delete a group and all its expenses"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Group Expenses",
+      "item": [
+        {
+          "name": "Get Group Expenses",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/expenses/{{groupId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "expenses", "{{groupId}}"]
+            },
+            "description": "Get all expenses for a specific group"
+          }
+        },
+        {
+          "name": "Add Expense to Group",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Grocery shopping\",\n  \"amount\": 85.20\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/expenses/{{groupId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "expenses", "{{groupId}}"]
+            },
+            "description": "Add a new expense to a group"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Individual Expense Management",
+      "item": [
+        {
+          "name": "Update Expense",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Updated description\",\n  \"amount\": 200.00\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/expense/{{expenseId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "expense", "{{expenseId}}"]
+            },
+            "description": "Update an individual expense"
+          }
+        },
+        {
+          "name": "Delete Expense",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/expense/{{expenseId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "expense", "{{expenseId}}"]
+            },
+            "description": "Delete an individual expense"
+          }
+        }
+      ]
+    }
+  ],
+  "auth": {
+    "type": "noauth"
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Note: Authentication is handled via browser cookies",
+          "// Make sure to sign in through the web app first"
+        ]
+      }
+    }
+  ]
+} 

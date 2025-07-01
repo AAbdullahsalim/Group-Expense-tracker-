@@ -57,9 +57,10 @@ export async function middleware(req: NextRequest) {
   }
 
   // Case 2: Unauthenticated user trying to access protected routes
-  // If user is not signed in and trying to access any route other than "/"
+  // If user is not signed in and trying to access any route other than "/" or "/docs"
   // Redirect them to the login page for authentication
-  if (!session && req.nextUrl.pathname !== '/') {
+  // Allow access to /docs for API documentation without authentication
+  if (!session && req.nextUrl.pathname !== '/' && req.nextUrl.pathname !== '/docs') {
     return NextResponse.redirect(new URL('/', req.url))
   }
 

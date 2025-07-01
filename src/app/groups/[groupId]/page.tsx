@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase-client'
 import { Group, Expense } from '@/types/database'
 import { useRouter } from 'next/navigation'
@@ -18,7 +18,7 @@ export default function GroupPage({ params }: Props) {
   const [creating, setCreating] = useState(false)
   const [description, setDescription] = useState('')
   const [amount, setAmount] = useState('')
-  const [user, setUser] = useState<any>(null)
+  const [user, setUser] = useState<{ email?: string } | null>(null)
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [groupId, setGroupId] = useState<string>('')
@@ -34,20 +34,12 @@ export default function GroupPage({ params }: Props) {
     initializeParams()
   }, [params])
 
-  useEffect(() => {
-    if (groupId) {
-      getUser()
-      getGroup()
-      getExpenses()
-    }
-  }, [groupId])
-
-  const getUser = async () => {
+  const getUser = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser()
     setUser(user)
-  }
+  }, [supabase.auth])
 
-  const getGroup = async () => {
+  const getGroup = useCallback(async () => {
     if (!groupId) return
     
     const { data, error } = await supabase
@@ -62,9 +54,9 @@ export default function GroupPage({ params }: Props) {
     } else {
       setGroup(data)
     }
-  }
+  }, [groupId, supabase, router])
 
-  const getExpenses = async () => {
+  const getExpenses = useCallback(async () => {
     if (!groupId) return
     
     const response = await fetch(`/api/expenses/${groupId}`)
@@ -76,7 +68,15 @@ export default function GroupPage({ params }: Props) {
       console.error('Error fetching expenses')
     }
     setLoading(false)
-  }
+  }, [groupId])
+
+  useEffect(() => {
+    if (groupId) {
+      getUser()
+      getGroup()
+      getExpenses()
+    }
+  }, [groupId, getUser, getGroup, getExpenses])
 
   const addExpense = async (e: React.FormEvent) => {
     e.preventDefault()

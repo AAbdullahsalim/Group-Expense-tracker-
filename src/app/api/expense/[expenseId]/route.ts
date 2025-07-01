@@ -9,7 +9,7 @@ import { Database } from '@/types/database'
  */
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { expenseId: string } }
+  { params }: { params: Promise<{ expenseId: string }> }
 ) {
   try {
     const { expenseId } = await params
@@ -78,7 +78,7 @@ export async function PUT(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { expenseId: string } }
+  { params }: { params: Promise<{ expenseId: string }> }
 ) {
   try {
     const { expenseId } = await params

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase-client'
 import { Group } from '@/types/database'
 import { useRouter } from 'next/navigation'
@@ -12,23 +12,18 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true)
   const [creating, setCreating] = useState(false)
   const [groupName, setGroupName] = useState('')
-  const [user, setUser] = useState<any>(null)
+  const [user, setUser] = useState<{ email?: string } | null>(null)
   const [editingGroup, setEditingGroup] = useState<Group | null>(null)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const router = useRouter()
   const supabase = createClient()
 
-  useEffect(() => {
-    getUser()
-    getGroups()
-  }, [])
-
-  const getUser = async () => {
+  const getUser = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser()
     setUser(user)
-  }
+  }, [supabase.auth])
 
-  const getGroups = async () => {
+  const getGroups = useCallback(async () => {
     const { data, error } = await supabase
       .from('groups')
       .select('*')
@@ -40,7 +35,12 @@ export default function Dashboard() {
       setGroups(data || [])
     }
     setLoading(false)
-  }
+  }, [supabase])
+
+  useEffect(() => {
+    getUser()
+    getGroups()
+  }, [getUser, getGroups])
 
   const createGroup = async (e: React.FormEvent) => {
     e.preventDefault()

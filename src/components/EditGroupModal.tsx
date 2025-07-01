@@ -40,8 +40,8 @@ export default function EditGroupModal({ group, isOpen, onClose, onSave }: EditG
     try {
       await onSave(group.id, name.trim())
       onClose()
-    } catch (error: any) {
-      setError(error.message || 'Failed to update group')
+    } catch (error: unknown) {
+      setError(error instanceof Error ? error.message : 'Failed to update group')
     } finally {
       setIsLoading(false)
     }
